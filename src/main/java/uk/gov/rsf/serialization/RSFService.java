@@ -30,12 +30,12 @@ public class RSFService {
     private static final List<IndexFunction> defaultIndexFunctions = Arrays.asList(
             new RecordIndexFunction());
 
-    private static final Pattern recordPattern = Pattern.compile("^/record/(.+)");
-    private static final Pattern indexPattern = Pattern.compile("^/index/(.+)/(.+)");
+    private static final Pattern recordPattern = Pattern.compile("^/record/([a-zA-Z-]+)");
+    private static final Pattern indexPattern = Pattern.compile("^/index/([a-zA-Z-]+)/?([a-zA-Z-]+)?");
 
     private static final Map<String, Pattern> patterns = ImmutableMap.of(
             "/record", Pattern.compile("^/record/(.+)"),
-            "/index", Pattern.compile("^/index/(.+)/(.+)"));
+            "/index", Pattern.compile("^/index/(.+)/?(.+)?"));
 
 //    public static void morc(InputStream inputStream, String indexName, String indexRender, Optional<String> indexValue, Optional<Integer> registerVersion) {
 //        Register register = new Register();
@@ -88,13 +88,13 @@ public class RSFService {
                 printRecords(request, records, register);
 
             }
-            else if (indexPattern.matcher(request).find()) {
+            else if (request.startsWith("/index")) {
                 matcher = indexPattern.matcher(request);
                 matcher.find();
                 String recordIndexName = matcher.group(1);
-                String pk = matcher.group(2);
+                Optional<String> pk = matcher.group(2) == null ? Optional.empty() : Optional.of(matcher.group(2));
 
-                Map<String, List<HashValue>> records = register.getRecordsForIndex(recordIndexName, Optional.of(pk), Optional.empty());
+                Map<String, List<HashValue>> records = register.getRecordsForIndex(recordIndexName, pk, Optional.empty());
 
                 printRecords(request, records, register);
             }
@@ -118,8 +118,8 @@ public class RSFService {
         System.out.println(request + ":");
 
         records.entrySet().stream().sorted((es1, es2) -> es1.getKey().compareTo(es2.getKey())).forEach(f -> {
-//            System.out.println(f.getKey() + ":");
-            f.getValue().forEach(itemHash -> System.out.println("\t" + register.getItem(itemHash).getContent()));
+            System.out.println("\t" + f.getKey() + ":");
+            f.getValue().forEach(itemHash -> System.out.println("\t\t" + register.getItem(itemHash).getContent()));
         });
     }
 
