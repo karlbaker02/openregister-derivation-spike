@@ -1,27 +1,25 @@
 # openregister-derivation-spike
-A spike for openregister java derivations.
+A spike for openregister java derivations, forked from https://github.com/michaelabenyohai/openregister-derivation-spike.
 
-```cat {register}.rsf | java -jar build/libs/rsf-parser.jar {indexName} {indexRender} {registerVersion} {indexValue}```
+```java -jar build/libs/rsf-parser.jar {registerRsf} {indexName} [register record/index record endpoints]```
 
 where `registerVersion` and `indexValue` are optional.
 
+- `registerRsf` is the original register RSF
 - `indexName` is the name of the index - any of "record", "current-countries", "local-authority-by-type"
-- `indexRender` displays the index in different ways - "current" (current view), "rsf" (the RSF), "indexTable" (the whole state stored)
-- `registerVersion` is an entry number in the original register, at which to open the derivation
-- `indexValue` is a value of the index - "NMD" is an `indexValue` for "local-authority-by-type"
+- `[register record/index record endpoints]` are the API endpoints that you want to view
 
 e.g. 
 
-```cat country.rsf | java -jar build/libs/rsf-parser.jar current-countries current```
-
-e.g. 
-
-```cat local-authority-eng.rsf | java -jar build/libs/rsf-parser.jar local-authority-by-type rsf 20 | gxargs -L 1 ./pretty-print-rsf.sh```
+```java -jar build/libs/rsf-parser.jar local_authorities_beta.rsf local-authority-by-type /index/local-authority-by-type```
 
 e.g.
 
-```cat local-authority-eng.rsf | java -jar build/libs/rsf-parser.jar local-authority-by-type rsf 20 | java -jar build/libs/rsf-parser.jar record current```
+```java -jar build/libs/rsf-parser.jar local_authorities_beta.rsf local-authority-by-type /index/local-authority-by-type/MD```
 
-e.g. 
+e.g.
 
-```cat country.rsf | java -jar build/libs/rsf-parser.jar current-countries indexTable```
+```java -jar build/libs/rsf-parser.jar local_authorities_beta.rsf local-authority-by-type /record/BOL /record/MD /index/local-authority-by-type/BOL /index/local-authority-by-type/NMD```
+
+
+Note: the code is currently broken if you try and hit a `/record` endpoint for the original register.
