@@ -1,5 +1,9 @@
 package uk.gov.rsf.serialization;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import uk.gov.rsf.indexer.function.*;
 import uk.gov.rsf.serialization.handlers.AddItemCommandHandler;
@@ -16,7 +20,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class RSFService {
 
@@ -110,25 +113,49 @@ public class RSFService {
     private static void printRecords(String indexName, String request, Map<String, List<HashValue>> records, Register register) {
         System.out.println(request + ":");
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+        objectMapper.getFactory().configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, false);
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        Map<String, Object> recordMap = new HashMap<>();
+
         records.forEach((key, r) -> {
-            List<Entry> entries = register.getRsfEntries(indexName, Optional.of(key), Optional.empty());
-            Entry record = entries.get(entries.size() - 1);
+                List<Entry> entries = register.getRsfEntries(indexName, Optional.of(key), Optional.empty());
+                Entry record = entries.get(entries.size() - 1);
 
-            System.out.println("\t\"" + key + "\": {");
-            System.out.println("\t\tentry-number:" + record.getEntryNumber() + ",");
-            System.out.println("\t\tentry-timestamp:" + record.getTimestampAsISOFormat() + ",");
+                Map<String, Object> items = new HashMap<>();
+                r.forEach(itemHash -> {
+                    Item item = register.getItem(itemHash);
+                    items.put(item.getSha256hex().toString(), item.getContent());
+                });
 
+                Map<String, Object> jsonMap = new HashMap<>();
+                jsonMap.put("entry-number", record.getEntryNumber());
+                jsonMap.put("entry-timestamp", record.getTimestampAsISOFormat());
+                jsonMap.put("item-hash", items);
 
-            List<Item> items = new ArrayList<>();
-            r.forEach(itemHash -> items.add(register.getItem(itemHash)));
+                recordMap.put(key, jsonMap);
 
-            String itemString = String.join(",", items.stream().map(
-                    item -> item.getSha256hex() + ":" + item.getContent()).collect(Collectors.toList()));
+    //            jsonMap.put("item-hash", items.stream().map(
+    //                    item -> item.getSha256hex() + ":" + item.getContent()).collect(Collectors.toList()));
 
-            System.out.println("\t\titem-hash: ["+ itemString +"]");
-            System.out.println("\t}");
+//                System.out.println("\t\"" + key + "\": {");
+    //            System.out.println("\t\tentry-number:" + record.getEntryNumber() + ",");
+    //            System.out.println("\t\tentry-timestamp:" + record.getTimestampAsISOFormat() + ",");
+
+    //            String itemString = String.join(",", items.stream().map(
+    //                    item -> item.getSha256hex() + ":" + item.getContent()).collect(Collectors.toList()));
+
+    //            System.out.println("\t\titem-hash: ["+ itemString +"]");
+    //            System.out.println("\t}");
         });
 
+        try {
+            System.out.println(objectMapper.writeValueAsString(recordMap));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
 //        records.entrySet().stream().sorted((es1, es2) -> es1.getKey().compareTo(es2.getKey())).forEach(f -> {
 //            Entry entry = register.getRecord(f.getKey()).get();
 //
