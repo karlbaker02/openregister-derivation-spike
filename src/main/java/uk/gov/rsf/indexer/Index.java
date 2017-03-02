@@ -41,6 +41,10 @@ public class Index {
         toEnd.get().setEndEntry(entry.getEntryNumber());
     }
 
+//    public List<Entry> getCurrentItemsForIndex(String indexName, Optional<String> indexValue) {
+//
+//    }
+
     public Map<String, List<HashValue>> getCurrentItemsForIndex(String indexName, Optional<String> indexValue, Optional<Integer> registerVersion) {
         Stream<IndexRow> indexValueRows = registerVersion.isPresent()
                 ? getCurrentRowsForIndexValueAtVersion(indexName, indexValue, registerVersion.get())
@@ -54,6 +58,13 @@ public class Index {
                 ? getCurrentRowsForIndexValueAtVersion(indexName, Optional.of(indexValue), registerVersion.get())
                 : getCurrentRowsForIndexValue(indexName, Optional.of(indexValue));
         return indexValueRows.map(row -> row.getItemHash()).collect(Collectors.toList());
+    }
+
+    public List<IndexRow> getCurrentIndexRowsForIndexValue(String indexName, Optional<String> indexValue, Optional<Integer> registerVersion) {
+        Stream<IndexRow> indexValueRows = registerVersion.isPresent()
+                ? getCurrentRowsForIndexValueAtVersion(indexName, indexValue, registerVersion.get())
+                : getCurrentRowsForIndexValue(indexName, indexValue);
+        return indexValueRows.collect(Collectors.toList());
     }
 
     public Map<IndexRow.IndexValueEntryNumberPair, List<HashValue>> getAllItemsByIndexValueAndOriginalEntryNumber(String indexName, Optional<String> indexValue, Optional<Integer> registerVersion) {
